@@ -1,7 +1,9 @@
 package contract
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -76,7 +78,18 @@ func CanonicalEnvelope(envelope LicenseEnvelope) ([]byte, error) {
 
 // EnvelopeAAD returns the authenticated associated data for an envelope.
 func EnvelopeAAD(envelope LicenseEnvelope) []byte {
-	return []byte("license/envelope/v1/" + envelope.KeyID + "/" + envelope.RecipientKeyID)
+	var aad bytes.Buffer
+	writeAADField(&aad, "license/envelope/v1")
+	writeAADField(&aad, envelope.KeyID)
+	writeAADField(&aad, envelope.RecipientKeyID)
+	return aad.Bytes()
+}
+
+func writeAADField(out *bytes.Buffer, value string) {
+	var length [8]byte
+	binary.BigEndian.PutUint64(length[:], uint64(len(value)))
+	_, _ = out.Write(length[:])
+	_, _ = out.WriteString(value)
 }
 
 // EncodeBase64URL encodes protocol bytes without padding.
@@ -87,20 +100,15 @@ func DecodeBase64URL(value string) ([]byte, error) { return b64.DecodeString(val
 
 // EncodeLicenseToken wraps an envelope in the external lic. representation.
 func EncodeLicenseToken(envelope []byte) []byte {
-	token := make([]byte, 0, len(LicenseTokenPrefix)+b64.EncodedLen(len(envelope)))
-	token = append(token, LicenseTokenPrefix...)
 	encoded := make([]byte, b64.EncodedLen(len(envelope)))
 	b64.Encode(encoded, envelope)
-	return append(token, encoded...)
+	return encoded
 }
 
 // DecodeLicenseToken decodes and validates the external lic. representation.
 func DecodeLicenseToken(raw []byte) ([]byte, error) {
 	trimmed := strings.TrimSpace(string(raw))
-	if !strings.HasPrefix(trimmed, LicenseTokenPrefix) {
-		return nil, ErrMalformedLicense
-	}
-	decoded, err := b64.DecodeString(strings.TrimPrefix(trimmed, LicenseTokenPrefix))
+	decoded, err := b64.DecodeString(trimmed)
 	if err != nil || len(decoded) == 0 {
 		return nil, ErrMalformedLicense
 	}

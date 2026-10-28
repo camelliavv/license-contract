@@ -67,19 +67,15 @@ func EncodeActivationRequestToken(request ActivationRequest) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return append([]byte(ActivationTokenPrefix), base64.RawURLEncoding.EncodeToString(raw)...), nil
+	return []byte(base64.RawURLEncoding.EncodeToString(raw)), nil
 }
 
 // ParseActivationRequestToken parses the external act. representation.
 func ParseActivationRequestToken(token []byte) (ActivationRequest, error) {
 	value := strings.TrimSpace(string(token))
-	if !strings.HasPrefix(value, ActivationTokenPrefix) {
-		return ActivationRequest{}, ErrMalformedLicense
-	}
-	encoded := strings.TrimPrefix(value, ActivationTokenPrefix)
 	strict := base64.RawURLEncoding.Strict()
-	raw, err := strict.DecodeString(encoded)
-	if err != nil || strict.EncodeToString(raw) != encoded {
+	raw, err := strict.DecodeString(value)
+	if err != nil || strict.EncodeToString(raw) != value {
 		return ActivationRequest{}, ErrMalformedLicense
 	}
 	return DecodeActivationRequestCBOR(raw)

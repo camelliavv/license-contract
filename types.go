@@ -8,8 +8,6 @@ import "time"
 const (
 	FormatVersionV1         = "v1"
 	EnvelopeFormatVersionV1 = "v1"
-	LicenseTokenPrefix      = "lic."
-	ActivationTokenPrefix   = "act."
 	SignatureAlgorithm      = "Ed25519"
 	EncryptionAlgorithm     = "X25519+HKDF-SHA256+AES-256-GCM"
 )
