@@ -32,6 +32,9 @@ func CanonicalPayload(payload LicensePayload) ([]byte, error) {
 		return nil, fmt.Errorf("%w: required field is empty", ErrMalformedLicense)
 	}
 	payload.Features = append([]string(nil), payload.Features...)
+	if err := validateEntitlements(payload.Features, payload.Limits); err != nil {
+		return nil, err
+	}
 	for i := range payload.Features {
 		payload.Features[i] = strings.TrimSpace(payload.Features[i])
 	}
@@ -47,6 +50,29 @@ func CanonicalPayload(payload LicensePayload) ([]byte, error) {
 	payload.ExpiresAt = payload.ExpiresAt.UTC().Round(0)
 	payload.IssuedAt = payload.IssuedAt.UTC().Round(0)
 	return json.Marshal(payload)
+}
+
+// validateEntitlements enforces the wire-level invariants shared by all
+// license users without imposing application-specific feature policy.
+func validateEntitlements(features []string, limits map[string]uint64) error {
+	seen := make(map[string]struct{}, len(features))
+	for _, feature := range features {
+		trimmed := strings.TrimSpace(feature)
+		if trimmed == "" {
+			return fmt.Errorf("%w: feature is empty", ErrMalformedLicense)
+		}
+		if _, exists := seen[trimmed]; exists {
+			return fmt.Errorf("%w: duplicate feature %q", ErrMalformedLicense, trimmed)
+		}
+		seen[trimmed] = struct{}{}
+	}
+	for key := range limits {
+		trimmed := strings.TrimSpace(key)
+		if trimmed == "" || trimmed != key {
+			return fmt.Errorf("%w: limit key is invalid", ErrMalformedLicense)
+		}
+	}
+	return nil
 }
 
 type unsignedEnvelope struct {

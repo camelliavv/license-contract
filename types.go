@@ -14,18 +14,22 @@ const (
 
 // LicensePayload is the authenticated, encrypted license payload.
 type LicensePayload struct {
-	FormatVersion string            `json:"format_version"`
-	LicenseID     string            `json:"license_id"`
-	IssuedAt      time.Time         `json:"issued_at"`
-	Issuer        string            `json:"issuer"`
-	Audience      string            `json:"audience"`
-	Product       string            `json:"product"`
-	HardwareID    string            `json:"hardware_id,omitempty"`
-	Features      []string          `json:"features,omitempty"`
-	Limits        map[string]uint64 `json:"limits,omitempty"`
-	NotBefore     time.Time         `json:"not_before"`
-	ExpiresAt     time.Time         `json:"expires_at"`
-	KeyID         string            `json:"key_id"`
+	FormatVersion string    `json:"format_version"`
+	LicenseID     string    `json:"license_id"`
+	IssuedAt      time.Time `json:"issued_at"`
+	Issuer        string    `json:"issuer"`
+	Audience      string    `json:"audience"`
+	// Product identifies the top-level licensed system or product type.
+	Product    string `json:"product"`
+	HardwareID string `json:"hardware_id,omitempty"`
+	// Features contains the functional capabilities enabled for this license.
+	Features []string `json:"features,omitempty"`
+	// Limits contains immutable upper bounds for business quantities. Current
+	// usage and remaining capacity are tracked outside the license.
+	Limits    map[string]uint64 `json:"limits,omitempty"`
+	NotBefore time.Time         `json:"not_before"`
+	ExpiresAt time.Time         `json:"expires_at"`
+	KeyID     string            `json:"key_id"`
 }
 
 // LicenseEnvelope is the signed outer license envelope.
